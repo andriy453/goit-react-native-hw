@@ -1,18 +1,12 @@
 import * as React from "react";
-import {
-  StyleSheet,
-  View,
-} from "react-native";
-import Register from "./src/Screens/AuthScreens/RegistrationScreen"; 
+import { StyleSheet, View } from "react-native";
+import Register from "./src/Screens/AuthScreens/RegistrationScreen";
 import Login from "./src/Screens/AuthScreens/LoginScreen";
-
-
-
 
 const App = () => {
   return (
-    <View >
- <Login/>
+    <View>
+      <Register />
     </View>
   );
 };
