@@ -14,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 const Login = () => {
   const [emeil, setEmeil] = useState("");
@@ -36,6 +37,7 @@ const Login = () => {
   const handleFocusemeil = (e) => {
     setIsFocusedEmeil(true);
   };
+  const navigation = useNavigation();
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View>
@@ -95,7 +97,13 @@ const Login = () => {
               <View style={[styles.loginConteiner]}>
                 <Text style={[styles.acount]}>Немає акаунту? </Text>
                 <TouchableOpacity style={[styles.loginBtn]}>
-                  <Text style={[styles.loginBtnText]}> Зареєстуватися</Text>
+                  <Text
+                    style={[styles.loginBtnText]}
+                    onPress={() => navigation.navigate("Registration")}
+                  >
+                    {" "}
+                    Зареєстуватися
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

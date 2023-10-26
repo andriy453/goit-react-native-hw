@@ -15,17 +15,19 @@ import {
 } from "react-native";
 
 import SvgAddButton from "../../../assets/svg/svgAddButtun";
+import { useNavigation } from "@react-navigation/native";
 
 const Register = () => {
   const [name, setName] = useState("");
-  const [emeil, setEmeil] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const onRegister = () => {
-    console.log(`${name}+${emeil}+${password}`);
-  };
+  // const onRegister = () => {
+  //   // return {name,email,password}
+  //   console.log({name,email,password});
+  // };
 
   const [isFocused, setIsFocused] = useState(true);
-  const [isFocusedEmeil, setIsFocusedEmeil] = useState(true);
+  const [isFocusedEmail, setIsFocusedEmail] = useState(true);
   const [isFocusedName, setIsFocusedName] = useState(true);
   const handleFocus = () => {
     setIsFocused(true);
@@ -34,10 +36,10 @@ const Register = () => {
     setIsFocused(false);
   };
   const handleBluremeil = () => {
-    setIsFocusedEmeil(false);
+    setIsFocusedEmail(false);
   };
   const handleFocusemeil = () => {
-    setIsFocusedEmeil(true);
+    setIsFocusedEmail(true);
   };
   const handleBlurName = () => {
     setIsFocusedName(false);
@@ -45,6 +47,7 @@ const Register = () => {
   const handleFocusName = () => {
     setIsFocusedName(true);
   };
+  const navigation = useNavigation();
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View>
@@ -87,12 +90,12 @@ const Register = () => {
                   style={[
                     styles.input,
                     {
-                      borderColor: isFocusedEmeil ? "#FF6C00" : "#E8E8E8",
-                      backgroundColor: isFocusedEmeil ? "#FFF" : "#F6F6F6",
+                      borderColor: isFocusedEmail ? "#FF6C00" : "#E8E8E8",
+                      backgroundColor: isFocusedEmail ? "#FFF" : "#F6F6F6",
                     },
                   ]}
-                  value={emeil}
-                  onChangeText={setEmeil}
+                  value={email}
+                  onChangeText={setEmail}
                   placeholder="Адреса електронної пошти"
                 />
               </Pressable>
@@ -118,7 +121,12 @@ const Register = () => {
 
               <Pressable>
                 <TouchableOpacity style={[styles.registerBtn]}>
-                  <Text style={[styles.registerBtnText]} onPress={onRegister}>
+                  <Text
+                    style={[styles.registerBtnText]}
+                    onPress={() =>
+                      navigation.navigate("Home", { email: email, name: name })
+                    }
+                  >
                     Зареєстуватися
                   </Text>
                 </TouchableOpacity>
@@ -126,7 +134,12 @@ const Register = () => {
               <View style={[styles.loginConteiner]}>
                 <Text style={[styles.acount]}>Вже є акаунт?</Text>
                 <TouchableOpacity style={[styles.loginBtn]}>
-                  <Text style={[styles.loginBtnText]}>Увійти</Text>
+                  <Text
+                    style={[styles.loginBtnText]}
+                    onPress={() => navigation.navigate("Login")}
+                  >
+                    Увійти
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -136,7 +149,7 @@ const Register = () => {
     </TouchableWithoutFeedback>
   );
 };
-
+//  { sessionId: 45, userId: "22e24" }
 const styles = StyleSheet.create({
   conteiner: {
     borderRadius: 25,
