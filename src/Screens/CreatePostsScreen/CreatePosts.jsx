@@ -11,7 +11,8 @@ const CreatePost = () => {
 
 const styles = StyleSheet.create({
   conteinerUser: {
-    backgroundColor: "red",
+    height:"100%",
+    backgroundColor: "#FFFFFF",
     color: "red",
   },
 });

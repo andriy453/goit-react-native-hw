@@ -22,31 +22,10 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import CreatePost from "../CreatePostsScreen/CreatePosts";
+import PostsScreen from "./PostsScreen";
+import ProfileScreen from "../ProfileScreen/ProfileScreen";
 
-function Settings() {
-  return (
-    <View>
-      <View style={styles.conteinerUser}>
-        <Image
-          style={styles.avatar}
-          source={require("../../../assets/img/avatar.png")}
-        />
-        <View>
-          <Text style={styles.nameUser}>faefasf</Text>
-          <Text style={styles.emeilUser}>fasfas</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
 
-function Profile() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Profile!</Text>
-    </View>
-  );
-}
 const Tabs = createBottomTabNavigator();
 const Home = () => {
   const navigation = useNavigation();
@@ -68,20 +47,17 @@ const Home = () => {
             }
           },
         })}
-        tabBarOptions={{
-          activeTintColor: "tomato",
-          inactiveTintColor: "red",
-        }}
       >
         <Tabs.Screen
           name="Settings"
-          component={Settings}
+          component={PostsScreen}
           options={{
             title: "",
             tabBarIcon: () => <SvgFeather />,
-            tabBarActiveBackgroundColor: "red",
-              headerShown:false,
+            tabBarActiveBackgroundColor: "#FF6C00",
+            headerShown: false,
           }}
+        
         />
         <Tabs.Screen
           name="CreatePost"
@@ -89,18 +65,20 @@ const Home = () => {
           options={{
             title: "",
             tabBarIcon: () => <SvgAddUser />,
-            tabBarActiveBackgroundColor: "red",
-             headerShown:false,
+            tabBarActiveBackgroundColor: "#FF6C00",
+            headerShown: false,
           }}
         />
         <Tabs.Screen
           name="Profil"
-          component={Profile}
+          component={ProfileScreen}
           options={{
             title: "",
             tabBarIcon: ({ color }) => <SvgUser />,
-            tabBarActiveBackgroundColor: "red",
-             headerShown:false,
+            tabBarActiveBackgroundColor: "#FF6C00",
+            headerShown: false,
+            tabBarBadgeStyle: "#FF6C00",
+            tabBarActiveTintColor:"#FF6C00",
           }}
         />
       </Tabs.Navigator>
@@ -116,6 +94,9 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   conteinerUser: {
+        height:"100%",
+    backgroundColor: "#FFFFFF",
+    color: "red",
     display: "flex",
     flexDirection: "row",
   },

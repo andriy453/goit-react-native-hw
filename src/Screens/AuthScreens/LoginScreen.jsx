@@ -101,7 +101,6 @@ const Login = () => {
                     style={[styles.loginBtnText]}
                     onPress={() => navigation.navigate("Registration")}
                   >
-                    {" "}
                     Зареєстуватися
                   </Text>
                 </TouchableOpacity>
