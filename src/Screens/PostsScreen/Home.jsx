@@ -1,122 +1,125 @@
-import React, { useState } from "react";
-import {
-  Image,
-  StyleSheet,
-  View,
-  Text,
-  Pressable,
-  TextInput,
-  Button,
-  KeyboardAvoidingView,
-  ImageBackground,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Feather } from '@expo/vector-icons';
 
-import SvgUser from "../../../assets/svg/svgUser";
-import SvgAddUser from "../../../assets/svg/svgAddUser";
-import SvgFeather from "../../../assets/svg/svgFeather-icon";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
-import CreatePost from "../CreatePostsScreen/CreatePosts";
-import PostsScreen from "./PostsScreen";
-import ProfileScreen from "../ProfileScreen/ProfileScreen";
+import { logout } from '../../redux/authOperations';
+import PostsScreen from '../PostsScreen/PostsScreen';
+import CreatePostsScreen from '../CreatePostsScreen/CreatePosts';
+import ProfileScreen from '../ProfileScreen/ProfileScreen';
 
+const MainTab = createBottomTabNavigator();
 
-const Tabs = createBottomTabNavigator();
-const Home = () => {
+export default HomeScreen = () => {
+  const dispatch = useDispatch();
   const navigation = useNavigation();
-  const {
-    params: { email, name },
-  } = useRoute();
 
   return (
-    <View style={styles.conteiner}>
-      <Tabs.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: () => {
-            if (route.name === "Profile") {
-              return <SvgUser />;
-            } else if (route.name === "Settings") {
-              return <SvgFeather />;
-            } else if (route.name === "CreatePost") {
-              return <SvgAddUser />;
-            }
-          },
-        })}
-      >
-        <Tabs.Screen
-          name="Settings"
-          component={PostsScreen}
-          options={{
-            title: "",
-            tabBarIcon: () => <SvgFeather />,
-            tabBarActiveBackgroundColor: "#FF6C00",
-            headerShown: false,
-          }}
-        
-        />
-        <Tabs.Screen
-          name="CreatePost"
-          component={CreatePost}
-          options={{
-            title: "",
-            tabBarIcon: () => <SvgAddUser />,
-            tabBarActiveBackgroundColor: "#FF6C00",
-            headerShown: false,
-          }}
-        />
-        <Tabs.Screen
-          name="Profil"
-          component={ProfileScreen}
-          options={{
-            title: "",
-            tabBarIcon: ({ color }) => <SvgUser />,
-            tabBarActiveBackgroundColor: "#FF6C00",
-            headerShown: false,
-            tabBarBadgeStyle: "#FF6C00",
-            tabBarActiveTintColor:"#FF6C00",
-          }}
-        />
-      </Tabs.Navigator>
-    </View>
+    <MainTab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarShowLabel: false,
+        headerTitleAlign: 'center',
+        headerStyle: styles.header,
+        headerTitleStyle: styles.title,
+        tabBarStyle: styles.tab,
+
+        tabBarIcon: ({ focused }) => {
+          let iconName;
+          if (route.name === 'PostsScreen') {
+            iconName = 'grid';
+          }
+          if (route.name === 'CreatePostsScreen') {
+            iconName = 'plus';
+          }
+          if (route.name === 'ProfileScreen') {
+            iconName = 'user';
+          }
+          return (
+            <View
+              style={{
+                ...styles.iconsTab,
+                backgroundColor: focused ? '#FF6C00' : '#FFFFFF',
+              }}
+            >
+              <Feather
+                name={iconName}
+                size={24}
+                color={focused ? '#FFFFFF' : 'gray'}
+              />
+            </View>
+          );
+        },
+      })}
+    >
+      <MainTab.Screen
+        name="PostsScreen"
+        component={PostsScreen}
+        options={{
+          title: 'Публікації',
+          headerRight: () => (
+            <Feather
+              name="log-out"
+              size={24}
+              color={'#BDBDBD'}
+              style={{ marginRight: 10 }}
+              onPress={() => dispatch(logout())}
+            />
+          ),
+        }}
+      />
+      <MainTab.Screen
+        name="CreatePostsScreen"
+        component={CreatePostsScreen}
+        options={{
+          tabBarStyle: { display: 'none' },
+          title: 'Створити публікацію',
+          headerLeft: () => (
+            <Feather
+              name="arrow-left"
+              size={24}
+              color={'#212121'}
+              style={{ marginLeft: 10 }}
+              onPress={() => navigation.goBack()}
+            />
+          ),
+        }}
+      />
+      <MainTab.Screen
+        name="ProfileScreen"
+        component={ProfileScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+    </MainTab.Navigator>
   );
 };
+
 const styles = StyleSheet.create({
-  conteiner: {
-    backgroundColor: "#FFFFFF",
-    width: "100%",
-    height: "100%",
-    paddingLeft: 16,
-    paddingRight: 16,
+  header: {
+    height: 88,
   },
-  conteinerUser: {
-        height:"100%",
-    backgroundColor: "#FFFFFF",
-    color: "red",
-    display: "flex",
-    flexDirection: "row",
+  title: {
+    fontWeight: 500,
+    fontSize: 17,
+    letterSpacing: -0.4,
+    textAlign: 'center',
+    color: '#212121',
   },
-  avatar: {
-    marginRight: 8,
+  tab: {
+    paddingHorizontal: 50,
+    height: 71,
   },
-  nameUser: {
-    color: "#212121",
-    fontSize: 13,
-    fontWeight: 700,
-    lineHeight: " normal",
-  },
-  emeilUser: {
-    color: "rgba(33, 33, 33, 0.80)",
-    fontSize: 11,
-    fontWeight: 400,
-  },
-  navbar: {
-    display: "flex",
-    flexDirection: "row",
+  iconsTab: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 39,
+    borderRadius: 22,
+    width: 70,
+    height: 40,
+    padding: 8,
   },
 });
-export default Home;

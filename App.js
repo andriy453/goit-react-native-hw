@@ -1,45 +1,44 @@
 import * as React from "react";
-import { StyleSheet, View, Button, TouchableOpacity } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
+import { StyleSheet, View,ActivityIndicator} from "react-native";
+// import { NavigationContainer } from "@react-navigation/native";
+// import { createStackNavigator } from "@react-navigation/stack";
 import "react-native-gesture-handler";
+import { useCallback, useEffect, useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import { Provider } from 'react-redux';
 
 import Register from "./src/Screens/AuthScreens/RegistrationScreen";
-import Login from "./src/Screens/AuthScreens/LoginScreen";
-import Home from "./src/Screens/PostsScreen/Home";
-import SvgLogaut from "./assets/svg/svgLogaut";
-const MainStack = createStackNavigator();
+// import Login from "./src/Screens/AuthScreens/LoginScreen";
+// import Home from "./src/Screens/PostsScreen/Home";
+// import SvgLogaut from "./assets/svg/svgLogaut";
+// import Main from './src/components/main/Main.jsx'
+// const MainStack = createStackNavigator();
+import Main from "./src/components/main/Main.jsx";
+
+import { store } from './src/redux/store.js';
 
 const App = () => {
+  const [appIsReady, setAppIsReady] = useState(true);
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      await SplashScreen.hideAsync();
+    }
+  });
+
+  if (!appIsReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
-    <NavigationContainer>
-      <MainStack.Navigator initialRouteName="Registration">
-        <MainStack.Screen name="Registration" component={Register} />
-        <MainStack.Screen name="Login" component={Login} />
-        <MainStack.Screen
-          name="Home"
-          component={Home}
-          options={{
-            title: "Публікації",
-            headerTintColor: "#212121",
-            headerTitleStyle: {
-              fontWeight: "500",
-              fontSize: 17,
-              lineHeight: 22,
-              letterSpacing: -0.408,
-            },
-            headerRight: () => (
-              <TouchableOpacity
-                style={styles.btnLogaut}
-                onPress={() => alert("This is a button!")}
-              >
-                <SvgLogaut />
-              </TouchableOpacity>
-            ),
-          }}
-        />
-      </MainStack.Navigator>
-    </NavigationContainer>
+    <Provider store={store}>
+      <StatusBar style="auto" />
+      <Main onLayout={onLayoutRootView} />
+    </Provider>
   );
 };
 

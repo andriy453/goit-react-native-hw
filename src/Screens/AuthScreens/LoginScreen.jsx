@@ -1,107 +1,144 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  Image,
   StyleSheet,
-  View,
   Text,
-  Pressable,
-  TextInput,
-  Button,
-  KeyboardAvoidingView,
-  ImageBackground,
+  View,
   TouchableOpacity,
-  Alert,
   TouchableWithoutFeedback,
   Keyboard,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
+  KeyboardAvoidingView,
+  Platform,
+  TextInput,
+  ImageBackground,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { login } from '../../redux/authOperations';
+import { authStateChange } from '../../redux/authSlice';
 
-const Login = () => {
-  const [emeil, setEmeil] = useState("");
-  const [password, setPassword] = useState("");
-  const [isFocused, setIsFocused] = useState(true);
-  const [isFocusedEmeil, setIsFocusedEmeil] = useState(true);
-  const onLogin = () => {
-    Alert.alert("Credentials", `${emeil} + ${password}`);
-  };
-  const handleFocus = (e) => {
-    setIsFocused(true);
+
+const wallpaper = require('../../../assets/img/goru.jpg');
+
+export default function LoginScreen() {
+  const dispatch = useDispatch();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setshowPassword] = useState(true);
+  const [keyboardStatus, setKeyboardStatus] = useState(false);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardStatus(true);
+    });
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardStatus(false);
+    });
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const handleFocus = key => {
+    setIsFocused(key);
   };
 
   const handleBlur = () => {
-    setIsFocused(false);
+    setIsFocused('');
   };
-  const handleBluremeil = () => {
-    setIsFocusedEmeil(false);
+
+  const handleLoginSubmit = () => {
+    if (email && password) {
+      dispatch(login(email, password)).then(data => {
+        if (data === undefined || !data.user) {
+          return;
+        }
+        dispatch(authStateChange({ stateChange: true }));
+        setEmail('');
+        setPassword('');
+      });
+      return;
+    }
   };
-  const handleFocusemeil = (e) => {
-    setIsFocusedEmeil(true);
-  };
-  const navigation = useNavigation();
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View>
-        <ImageBackground
-          style={[styles.backgroundImage]}
-          source={require("../../../assets/img/goru.jpg")}
-        >
+      <View style={styles.container}>
+        <ImageBackground source={wallpaper} style={styles.backgroundImage}>
           <KeyboardAvoidingView
-            behavior={Platform.OS == "ios" ? "position" : "height"}
-            style={{ flex: 1, justifyContent: "flex-end" }}
+            behavior={Platform.OS == 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1, justifyContent: 'flex-end' }}
           >
-            <View style={styles.conteiner}>
-              <Text style={[styles.title]}>Увійти</Text>
-              <Pressable>
+            <View
+              style={{ ...styles.form, height: keyboardStatus ? 530 : 450 }}
+            >
+              <Text style={styles.formTitle}>Увійти</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    borderColor:
+                      isFocused === 'emailAddress' ? '#FF6C00' : '#E8E8E8',
+                  },
+                ]}
+                placeholderTextColor={'#BDBDBD'}
+                placeholder="Адреса електронної пошти"
+                value={email}
+                textContentType="emailAddress"
+                autoCompleteType="email"
+                onBlur={handleBlur}
+                onFocus={() => handleFocus('emailAddress')}
+                onChangeText={setEmail}
+              />
+
+              <View style={(position = 'relative')}>
                 <TextInput
-                  onFocus={handleFocusemeil}
-                  onBlur={handleBluremeil}
                   style={[
                     styles.input,
+                    { marginBottom: 0 },
                     {
-                      borderColor: isFocusedEmeil ? "#FF6C00" : "#E8E8E8",
-                      backgroundColor: isFocusedEmeil ? "#FFF" : "#F6F6F6",
+                      borderColor:
+                        isFocused === 'password' ? '#FF6C00' : '#E8E8E8',
                     },
                   ]}
-                  placeholder="Адреса електронної пошти"
-                  value={emeil}
-                  onChangeText={setEmeil}
-                />
-              </Pressable>
-              <Pressable style={[styles.inputtextPosition]}>
-                <TextInput
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  style={[
-                    styles.input,
-                    {
-                      borderColor: isFocused ? "#FF6C00" : "#E8E8E8",
-                      backgroundColor: isFocused ? "#FFF" : "#F6F6F6",
-                    },
-                  ]}
+                  placeholderTextColor={'#BDBDBD'}
                   placeholder="Пароль"
                   value={password}
+                  textContentType="password"
+                  autoCompleteType="off"
+                  secureTextEntry={showPassword}
+                  onBlur={handleBlur}
+                  onFocus={() => handleFocus('password')}
                   onChangeText={setPassword}
                 />
-                <TouchableOpacity>
-                  <Text style={styles.paswordShow}>Показати</Text>
-                </TouchableOpacity>
-              </Pressable>
-
-              <Pressable>
-                <TouchableOpacity style={[styles.registerBtn]}>
-                  <Text style={[styles.registerBtnText]} onPress={onLogin}>
-                    Увійти
-                  </Text>
-                </TouchableOpacity>
-              </Pressable>
-              <View style={[styles.loginConteiner]}>
-                <Text style={[styles.acount]}>Немає акаунту? </Text>
-                <TouchableOpacity style={[styles.loginBtn]}>
-                  <Text
-                    style={[styles.loginBtnText]}
-                    onPress={() => navigation.navigate("Registration")}
+                {password && (
+                  <TouchableOpacity
+                    style={styles.btnShowPassword}
+                    onPress={() => setshowPassword(!showPassword)}
                   >
-                    Зареєстуватися
+                    <Text style={styles.btnShowPasswordText}>
+                      {setPassword ? 'Показати' : 'Приховати'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TouchableOpacity
+              style={styles.button}
+                activeOpacity={0.8}
+                onPress={() => handleLoginSubmit(email, password)}
+              >
+                <Text style={styles.title }>Увійти</Text>
+              </TouchableOpacity>
+              <View style={styles.wrap}>
+                <Text>Немає акаунту? </Text>
+                <TouchableOpacity>
+                  <Text onPress={() => navigation.navigate("Registration")}
+                   style={styles.text}
+                  >
+                    Зареєструватися
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -111,80 +148,80 @@ const Login = () => {
       </View>
     </TouchableWithoutFeedback>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  conteiner: {
-    borderRadius: 25,
-    backgroundColor: "#FFFFFF",
-    paddingBottom: 141,
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingTop: 32,
-  },
-  title: {
-    color: "#212121",
-    textAlign: "center",
-    fontSize: "30px",
-    fontStyle: "normal",
-    fontWeight: 500,
-    lineHeight: "normal",
-    letterSpacing: " 0.3px",
-    marginBottom: 33,
-  },
-  input: {
-    // position:'relative',
-    borderRadius: 8,
-    border: 5,
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    width: "100%",
-    height: 50,
-    color: "#BDBDBD",
-    marginBottom: 10,
-    padding: 16,
-  },
-  registerBtn: {
-    fontSize: "16",
-    paddingBottom: 16,
-    paddingTop: 16,
-    paddingLeft: 32,
-    paddingRight: 32,
-    borderRadius: "50%",
-    backgroundColor: "#FF6C00",
-    marginBottom: 16,
-  },
-  registerBtnText: {
-    color: "#FFFFFF",
-    textAlign: "center",
-  },
-  loginConteiner: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  inputtextPosition: {
-    marginBottom: 43,
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   backgroundImage: {
-    // flex: 1,
-    resizeMode: "cover",
-    justifyContent: "flex-end",
-    width: "100%",
-    height: "100%",
+    flex: 1,
+    resizeMode: 'cover',
+    justifyContent: 'flex-end',
+    width: '100%',
+    height: '100%',
   },
-  paswordShow: {
-    position: "absolute",
+  form: {
+    position: 'relative',
+    paddingTop: 32,
+    paddingBottom: 40,
+    paddingHorizontal: 16,
+    borderTopStartRadius: 25,
+    borderTopEndRadius: 25,
+    backgroundColor: '#FFFFFF',
+    fontFamily: 'Roboto-Regular',
+    fontSize: 16,
+  },
+  formTitle: {
+    fontFamily: 'Roboto-Medium',
+    color: '#212121',
+    marginBottom: 33,
+    fontSize: 30,
+    textAlign: 'center',
+  },
+  input: {
+    fontFamily: 'Roboto-Regular',
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#F6F6F6',
+    borderWidth: 1,
+    color: '#212121',
+    padding: 16,
+    marginBottom: 16,
+  },
+  btnShowPassword: {
+    position: 'absolute',
     right: 16,
-    top: -43,
-    color: "#1B4371",
+    top: 14,
   },
-  loginBtnText: {
-    color: "#1B4371",
+  btnShowPasswordText: {
+    color: '#1B4371',
   },
-  acount: {
-    color: "#1B4371",
+  button: {
+    height: 50,
+    backgroundColor: '#FF6C00',
+    borderRadius: 100,
+    marginTop: 43,
+    alignItems: 'center',
+    padding: 16,
+  },
+  title: {
+    fontFamily: 'Roboto-Regular',
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  text: {
+    color: '#1B4371',
+    textAlign: 'center',
+  },
+  wrap: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop:10,
+    
   },
 });
-
-export default Login;

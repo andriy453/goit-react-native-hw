@@ -1,142 +1,280 @@
-import React, { useState } from "react";
-import {
-  Image,
-  StyleSheet,
-  View,
-  Text,
-  Pressable,
-  TextInput,
-  Button,
-  KeyboardAvoidingView,
-  ImageBackground,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from "react-native";
-
-import SvgAddButton from "../../../assets/svg/svgAddButtun";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
+import {
+  StyleSheet,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Keyboard,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  Image,
+  ImageBackground,
+} from "react-native";
+import {
+  AntDesign,
+  MaterialCommunityIcons,
+  Ionicons,
+} from "@expo/vector-icons";
+import { Camera } from "expo-camera";
+import * as MediaLibrary from "expo-media-library";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
-const Register = () => {
+import { register } from "../../redux/authOperations";
+import { storage } from "../../config";
+
+const wallpaper = require("../../../assets/img/goru.jpg");
+const userlogo = require("../../../assets/img/userlogo.png");
+
+export default function RegisterScreen() {
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // const onRegister = () => {
-  //   // return {name,email,password}
-  //   console.log({name,email,password});
-  // };
+  const [avatar, setAvatar] = useState("");
+  const [showPassword, setShowPassword] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
+  const [keyboardStatus, setKeyboardStatus] = useState(false);
 
-  const [isFocused, setIsFocused] = useState(true);
-  const [isFocusedEmail, setIsFocusedEmail] = useState(true);
-  const [isFocusedName, setIsFocusedName] = useState(true);
-  const handleFocus = () => {
-    setIsFocused(true);
+  const [hasPermission, setHasPermission] = useState(null);
+  const [cameraRef, setCameraRef] = useState(null);
+  const [type, setType] = useState(Camera.Constants.Type.back);
+  const [openCamera, setOpenCamera] = useState(false);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardStatus(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardStatus(false);
+    });
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const handleFocus = (key) => {
+    setIsFocused(key);
   };
+
   const handleBlur = () => {
-    setIsFocused(false);
+    setIsFocused("");
   };
-  const handleBluremeil = () => {
-    setIsFocusedEmail(false);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      await MediaLibrary.requestPermissionsAsync();
+      setHasPermission(status === "granted");
+    })();
+  }, []);
+
+  if (hasPermission === null) {
+    return <View />;
+  }
+  // if (hasPermission === false) {
+  //   return <Text>No access to camera</Text>;
+  // }
+
+  const makePhoto = async () => {
+    if (cameraRef) {
+      const { uri } = await cameraRef.takePictureAsync();
+      setAvatar(uri);
+      setOpenCamera(false);
+    }
   };
-  const handleFocusemeil = () => {
-    setIsFocusedEmail(true);
+
+  const uploadPhotoToServer = async () => {
+    const uniqPostId = Date.now().toString();
+    try {
+      const response = await fetch(avatar);
+      const file = await response.blob();
+      const imageRef = ref(storage, `avatarImage/${uniqPostId}`);
+      await uploadBytes(imageRef, file);
+
+      const processedPhoto = await getDownloadURL(imageRef);
+      return processedPhoto;
+    } catch (error) {
+      console.log("error", error.message);
+    }
   };
-  const handleBlurName = () => {
-    setIsFocusedName(false);
+
+  const handleRegisterSubmit = async (name, email, password) => {
+    if (name && email && password) {
+      const photo = avatar ? await uploadPhotoToServer() : "";
+
+      dispatch(register(name, email, password, photo)).then((data) => {
+        if (data === undefined || !data.uid) {
+          return;
+        }
+        setName("");
+        setEmail("");
+        setPassword("");
+      });
+      return;
+    }
   };
-  const handleFocusName = () => {
-    setIsFocusedName(true);
-  };
-  const navigation = useNavigation();
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View>
-        <ImageBackground
-          style={[styles.backgroundImage]}
-          source={require("../../../assets/img/goru.jpg")}
-        >
+      <View style={styles.container}>
+        <ImageBackground source={wallpaper} style={styles.backgroundImage}>
           <KeyboardAvoidingView
-            behavior={Platform.OS == "ios" ? "position" : "height"}
+            behavior={Platform.OS == "ios" ? "padding" : "height"}
             style={{ flex: 1, justifyContent: "flex-end" }}
           >
-            <View style={styles.conteiner}>
-              <View style={styles.avatarWrapper}>
-                <Image style={styles.avatar} />
-                <TouchableOpacity style={styles.btnAddAvatar}>
-                  <SvgAddButton style={styles.btnAddAvatarSvgLoad} />
+            <View
+              style={{ ...styles.form, height: keyboardStatus ? 680 : 550 }}
+            >
+              <View style={styles.avatarWrap}>
+                {openCamera ? (
+                  <Camera
+                    style={styles.avatar}
+                    type={type}
+                    ref={setCameraRef}
+                    ratio="1:1"
+                  >
+                    <TouchableOpacity
+                      style={styles.cameraRevers}
+                      onPress={() => {
+                        setType(
+                          type === Camera.Constants.Type.front
+                            ? Camera.Constants.Type.back
+                            : Camera.Constants.Type.front
+                        );
+                      }}
+                    >
+                      <MaterialCommunityIcons
+                        name="camera-flip"
+                        size={24}
+                        color={"#BDBDBD"}
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.cameraBtnPos}
+                      onPress={makePhoto}
+                    >
+                      <Ionicons name="ios-camera" size={24} color={"#BDBDBD"} />
+                    </TouchableOpacity>
+                  </Camera>
+                ) : (
+                  <Image
+                    source={avatar ? { uri: avatar } : userlogo}
+                    style={styles.avatar}
+                    alt="User photo"
+                  />
+                )}
+
+                <TouchableOpacity style={styles.btnAdd}>
+                  {!avatar ? (
+                    <AntDesign
+                      name="pluscircleo"
+                      size={25}
+                      color={"#FF6C00"}
+                      onPress={() => {
+                        setAvatar(null);
+                        setOpenCamera(true);
+                      }}
+                    />
+                  ) : (
+                    <AntDesign
+                      name="closecircleo"
+                      size={25}
+                      color={"#b0aeae"}
+                      onPress={() => {
+                        setAvatar(null);
+                        setOpenCamera(false);
+                      }}
+                    />
+                  )}
                 </TouchableOpacity>
               </View>
-              <Text style={[styles.title]}>Реєстрація</Text>
-              <Pressable>
+
+              <Text style={styles.formTitle}>Реєстрація</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    borderColor:
+                      isFocused === "username" ? "#FF6C00" : "#E8E8E8",
+                  },
+                ]}
+                placeholderTextColor={"#BDBDBD"}
+                placeholder="Логін"
+                value={name}
+                textContentType="username"
+                autoCompleteType="off"
+                onBlur={handleBlur}
+                onFocus={() => handleFocus("username")}
+                onChangeText={(value) => setName(value)}
+              />
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    borderColor:
+                      isFocused === "emailAddress" ? "#FF6C00" : "#E8E8E8",
+                  },
+                ]}
+                placeholderTextColor={"#BDBDBD"}
+                placeholder="Адреса електронної пошти"
+                value={email}
+                textContentType="emailAddress"
+                autoCompleteType="off"
+                onBlur={handleBlur}
+                onFocus={() => handleFocus("emailAddress")}
+                onChangeText={(value) => setEmail(value)}
+              />
+
+              <View style={(position = "relative")}>
                 <TextInput
-                  onFocus={handleFocusName}
-                  onBlur={handleBlurName}
                   style={[
                     styles.input,
+                    { marginBottom: 0 },
                     {
-                      borderColor: isFocusedName ? "#FF6C00" : "#E8E8E8",
-                      backgroundColor: isFocusedName ? "#FFF" : "#F6F6F6",
+                      borderColor:
+                        isFocused === "password" ? "#FF6C00" : "#E8E8E8",
                     },
                   ]}
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="Логін"
-                />
-              </Pressable>
-              <Pressable>
-                <TextInput
-                  onFocus={handleFocusemeil}
-                  onBlur={handleBluremeil}
-                  style={[
-                    styles.input,
-                    {
-                      borderColor: isFocusedEmail ? "#FF6C00" : "#E8E8E8",
-                      backgroundColor: isFocusedEmail ? "#FFF" : "#F6F6F6",
-                    },
-                  ]}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Адреса електронної пошти"
-                />
-              </Pressable>
-              <Pressable style={[styles.inputtextPosition]}>
-                <TextInput
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  style={[
-                    styles.input,
-                    {
-                      borderColor: isFocused ? "#FF6C00" : "#E8E8E8",
-                      backgroundColor: isFocused ? "#FFF" : "#F6F6F6",
-                    },
-                  ]}
+                  placeholderTextColor={"#BDBDBD"}
                   placeholder="Пароль"
                   value={password}
-                  onChangeText={setPassword}
+                  textContentType="password"
+                  autoCompleteType="off"
+                  secureTextEntry={showPassword}
+                  onBlur={handleBlur}
+                  onFocus={() => handleFocus("password")}
+                  onChangeText={(value) => setPassword(value)}
                 />
-                <TouchableOpacity>
-                  <Text style={styles.paswordShow}>Показати</Text>
-                </TouchableOpacity>
-              </Pressable>
-
-              <Pressable>
-                <TouchableOpacity style={[styles.registerBtn]}>
-                  <Text
-                    style={[styles.registerBtnText]}
-                    onPress={() =>
-                      navigation.navigate("Home", { email: email, name: name })
-                    }
+                {password && (
+                  <TouchableOpacity
+                    style={styles.btnShowPassword}
+                    onPress={() => setShowPassword(!showPassword)}
                   >
-                    Зареєстуватися
-                  </Text>
-                </TouchableOpacity>
-              </Pressable>
-              <View style={[styles.loginConteiner]}>
-                <Text style={[styles.acount]}>Вже є акаунт?</Text>
-                <TouchableOpacity style={[styles.loginBtn]}>
-                  <Text
-                    style={[styles.loginBtnText]}
-                    onPress={() => navigation.navigate("Login")}
+                    <Text style={styles.btnShowPasswordText}>
+                      {showPassword ? "Показати" : "Приховати"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TouchableOpacity
+              style={styles.button}
+                activeOpacity={0.8}
+                onPress={() => handleRegisterSubmit(name, email, password)}
+              >
+                <Text style={styles.title }>Зареєстуватися</Text>
+              </TouchableOpacity>
+              <View style={styles.wrap}>
+                <Text>Вже є акаунт? </Text>
+                <TouchableOpacity>
+                  <Text onPress={() => navigation.navigate("Login")}
+                   style={styles.text}
                   >
                     Увійти
                   </Text>
@@ -148,144 +286,115 @@ const Register = () => {
       </View>
     </TouchableWithoutFeedback>
   );
-};
-//  { sessionId: 45, userId: "22e24" }
+}
+
 const styles = StyleSheet.create({
-  conteiner: {
-    borderRadius: 25,
-    backgroundColor: "#FFFFFF",
-    paddingBottom: 78,
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingTop: 92,
-  },
-  title: {
-    color: "#212121",
-    textAlign: "center",
-    fontSize: "30px",
-    fontStyle: "normal",
-    fontWeight: 500,
-    lineHeight: "normal",
-    letterSpacing: " 0.3px",
-    marginBottom: 33,
-  },
-  input: {
-    // position:'relative',
-    borderRadius: 8,
-    border: 5,
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    width: "100%",
-    height: 50,
-    color: "#212121",
-    marginBottom: 10,
-    padding: 16,
-  },
-  registerBtn: {
-    fontSize: "16",
-    paddingBottom: 16,
-    paddingTop: 16,
-    paddingLeft: 32,
-    paddingRight: 32,
-    borderRadius: "50%",
-    backgroundColor: "#FF6C00",
-    marginBottom: 16,
-  },
-  registerBtnText: {
-    color: "#FFFFFF",
-    textAlign: "center",
-  },
-  loginConteiner: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  inputtextPosition: {
-    marginBottom: 43,
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "flex-end",
   },
   backgroundImage: {
-    // flex: 1,
+    flex: 1,
     resizeMode: "cover",
     justifyContent: "flex-end",
     width: "100%",
     height: "100%",
   },
-  paswordShow: {
-    position: "absolute",
-    right: 16,
-    top: -43,
-    color: "#1B4371",
-  },
-  button_hover: {
-    borderColor: "red",
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 16,
-  },
-  avatarWrapper: {
+  avatarWrap: {
     position: "absolute",
     top: -60,
-    alignSelf: "center",
+    left: "50%",
+    transform: [{ translateX: -50 }],
     width: 120,
     height: 120,
-    backgroundColor: "#f6f6f6",
+    backgroundColor: "#F6F6F6",
     borderRadius: 16,
   },
   avatar: {
     width: 120,
     height: 120,
     borderRadius: 16,
+    backgroundColor: "#FFF",
   },
-  btnAddAvatar: {
+  cameraBtnPos: {
     position: "absolute",
-    bottom: 14,
-    right: -12.5,
-
-    alignItems: "center",
-    alignContent: "center",
-
+    bottom: 5,
+    left: 5,
+  },
+  cameraRevers: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+  },
+  btnAdd: {
+    position: "absolute",
+    top: 75,
+    right: -12,
     width: 25,
     height: 25,
-
-    color: "#ff6c00",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 50,
   },
-  btnAddAvatarLoad: {
+  form: {
+    position: "relative",
+    paddingTop: 92,
+    paddingBottom: 40,
+    paddingHorizontal: 16,
+    borderTopStartRadius: 25,
+    borderTopEndRadius: 25,
+    backgroundColor: "#FFFFFF",
+    fontFamily: "Roboto-Regular",
+    fontSize: 16,
+  },
+  formTitle: {
+    fontFamily: "Roboto-Medium",
+    color: "#212121",
+    marginBottom: 33,
+    fontSize: 30,
+    textAlign: "center",
+  },
+  input: {
+    fontFamily: "Roboto-Regular",
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: "#F6F6F6",
+    borderWidth: 1,
+    color: "#212121",
+    padding: 16,
+    marginBottom: 16,
+  },
+  btnShowPassword: {
     position: "absolute",
-    bottom: 14,
-    right: -12.5,
-
-    alignItems: "center",
-    alignContent: "center",
-
-    width: 25,
-    height: 25,
-
-    color: "#ff6c00",
-    backgroundColor: "#ffffff",
-    borderRadius: 50,
-
-    transform: [{ rotate: "45deg" }],
+    right: 16,
+    top: 14,
   },
-  btnAddAvatarSvg: {
-    fill: "#ff6c00",
-    stroke: "#ff6c00",
-    backgroundColor: "#ffffff",
-  },
-  btnAddAvatarSvgLoad: {
-    fill: "#bdbdbd",
-    stroke: "#e8e8e8",
-    backgroundColor: "#ffffff",
-  },
-  acount: {
+  btnShowPasswordText: {
     color: "#1B4371",
   },
-  loginBtnText: {
-    color: "#1B4371",
+  button: {
+    height: 50,
+    backgroundColor: '#FF6C00',
+    borderRadius: 100,
+    marginTop: 43,
+    alignItems: 'center',
+    padding: 16,
+  },
+  title: {
+    fontFamily: 'Roboto-Regular',
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  text: {
+    color: '#1B4371',
+    textAlign: 'center',
+  },
+  wrap: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop:10,
+    
   },
 });
-
-export default Register;

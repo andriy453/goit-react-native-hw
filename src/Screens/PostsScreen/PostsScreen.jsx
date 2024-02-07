@@ -1,55 +1,122 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  Image,
   StyleSheet,
-  View,
   Text,
-} from "react-native";
-function PostsScreen() {
+  View,
+  Image,
+  FlatList,
+  Dimensions,
+  RefreshControl,
+} from 'react-native';
+import { useSelector } from 'react-redux';
+import { collection, onSnapshot } from 'firebase/firestore';
+
+import { db } from '../../config';
+import PostItem from '../../components/Posts/PostItem';
+import userlogo from '../../../assets/img/userlogo.png';
+
+export default function PostsScreen() {
+  const name = useSelector(state => state.auth.name);
+  const email = useSelector(state => state.auth.email);
+  const avatar = useSelector(state => state.auth.avatar);
+  const [serverPosts, setServerPosts] = useState([]);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+
+  const fetchPosts = () => {
+    const dbRef = collection(db, 'posts');
+    onSnapshot(dbRef, data => {
+      const dbPosts = data.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const sortedDbPosts = dbPosts.sort((a, b) => b.createdAt - a.createdAt);
+      setServerPosts(sortedDbPosts);
+    });
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchPosts();
+    setRefreshing(false);
+  };
+
   return (
-    <View>
-      <View style={styles.conteinerUser}>
+    <View style={styles.container}>
+      <View style={styles.userInfo}>
         <Image
           style={styles.avatar}
-          source={require("../../../assets/img/avatar.png")}
+          source={avatar ? { uri: avatar } : userlogo}
+          alt="User photo"
         />
-        <View>
-          <Text style={styles.nameUser}>faefasf</Text>
-          <Text style={styles.emeilUser}>fasfas</Text>
+        <View style={styles.userData}>
+          <Text style={styles.userName}>{name}</Text>
+          <Text style={styles.userEmail}>{email}</Text>
         </View>
       </View>
+      {serverPosts.length !== 0 && (
+        <FlatList
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          data={serverPosts}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <PostItem
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              photoLocation={item.photoLocation}
+              url={item.photo}
+              geoLocation={item.geoLocation}
+            />
+          )}
+          contentContainerStyle={styles.contentContainer}
+        />
+      )}
     </View>
   );
 }
-export default PostsScreen;
 
 const styles = StyleSheet.create({
-    conteiner: {
-        backgroundColor: "#FFFFFF",
-        width: "100%",
-        height: "100%",
-        paddingLeft: 16,
-        paddingRight: 16,
-    },
-    conteinerUser: {
-        height: "100%",
-        backgroundColor: "#FFFFFF",
-        color: "red",
-        display: "flex",
-        flexDirection: "row",
-    },
-    avatar: {
-        marginRight: 8,
-    },
-    nameUser: {
-        color: "#212121",
-        fontSize: 13,
-        fontWeight: 700,
-        lineHeight: " normal",
-    },
-    emeilUser: {
-        color: "rgba(33, 33, 33, 0.80)",
-        fontSize: 11,
-        fontWeight: 400,
-    }
-})
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 15,
+    paddingBottom: 15,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0.5,
+    borderBottomWidth: -0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.30)',
+    borderBottomColor: 'rgba(0, 0, 0, 0.30)',
+    minHeight: Dimensions.get('window').height - 150,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingBottom: 15,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#F6F6F6',
+    borderRadius: 16,
+  },
+  userData: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+  userName: {
+    fontFamily: 'Roboto-Bold',
+    color: '#212121',
+    fontSize: 13,
+  },
+  userEmail: {
+    fontFamily: 'Roboto-Regular',
+    color: '#212121',
+    fontSize: 11,
+  },
+  contentContainer: {},
+});
